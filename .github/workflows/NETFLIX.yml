@@ -82,25 +82,13 @@ jobs:
       - name: Load Docker Image
         run: docker load -i netflix-clone.tar
 
-      - name: Install SonarQube Scanner
-        run: |
-          sudo apt-get update
-          sudo apt-get install openjdk-11-jdk -y
-          curl -sSL https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.6.2.2472-linux.zip -o sonar-scanner.zip
-          unzip sonar-scanner.zip -d /opt
-          echo 'export PATH=/opt/sonar-scanner-4.6.2.2472-linux/bin:$PATH' >> $GITHUB_ENV
-
-      - name: Verify SonarQube Scanner Installation
-        run: sonar-scanner --version
-
-      - name: Run SonarQube Analysis
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.organization=my-org
+            -Dsonar.projectKey=netflix-clone 
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: |
-          sonar-scanner \
-            -Dsonar.projectKey=netflix-clone \
-            -Dsonar.organization=your-org \
-            -Dsonar.sources=. \
-            -Dsonar.host.url=$SONAR_HOST_URL \
-            -Dsonar.login=$SONAR_TOKEN
