@@ -92,3 +92,47 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  OWASP-Dependency-Check:
+    needs: sonar_analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Set up Java
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      # Install unzip (if not available)
+      - name: Install unzip
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
+      # Install OWASP Dependency-Check
+      - name: Install OWASP Dependency-Check
+        run: |
+          curl -L -o dependency-check.zip https://github.com/jeremylong/DependencyCheck/releases/download/v8.2.1/dependency-check-8.2.1-release.zip
+          unzip dependency-check.zip -d $HOME/dependency-check
+          chmod +x $HOME/dependency-check/dependency-check/bin/dependency-check.sh
+
+      # Create output directory for reports
+      - name: Create output directory
+        run: mkdir -p dependency-check-report
+
+     # Run OWASP Dependency-Check SCA
+      - name: Run OWASP Dependency-Check
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        continue-on-error: true
+        run: |
+          npm install
+          $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
+            --project "My Project" \
+            --scan $(pwd) \
+            --format "ALL" \
+            --out dependency-check-report \
+            --failOnCVSS 9
