@@ -255,7 +255,8 @@ jobs:
       - name: Deploy Application to EKS
         run: |
           echo "Applying Kubernetes manifests..."
-          kubectl apply -f Kubernetes/deployment.yml 
+          kubectl apply -f Kubernetes/deployment.yml
+          kubectl apply -f Kubernetes/node-service.yaml
           kubectl apply -f Kubernetes/service.yml 
           kubectl rollout status deployment/netflix-clone
 
@@ -271,5 +272,46 @@ jobs:
             echo "Waiting for LoadBalancer to provision external URL..."
             sleep 15
           done
+
+  monitoring:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo update
+
+      - name: Deploy Prometheus
+        run: |
+          helm install prometheus prometheus-community/prometheus \
+            --namespace monitoring \
+            --create-namespace
+
+      - name: Deploy Grafana
+        run: |
+          helm install grafana grafana/grafana \
+            --namespace monitoring
+
+      - name: Deploy Node Exporter
+        run: |
+          helm install node-exporter prometheus-community/prometheus-node-exporter \
+            --namespace monitoring
+
+      - name: Verify Deployments
+        run: |
+          kubectl get pods -n monitoring
+          kubectl get svc -n monitoring
 
   
