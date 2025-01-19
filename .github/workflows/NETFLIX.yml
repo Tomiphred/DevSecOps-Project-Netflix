@@ -161,3 +161,78 @@ jobs:
 
       - name: Push Docker Image to Docker Hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/netflix-clone:latest
+
+
+  create-cluster:
+    runs-on: ubuntu-latest
+    needs: push_to_dockerhub
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Install eksctl
+        run: |
+          curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+          sudo mv /tmp/eksctl /usr/local/bin
+          eksctl version
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+
+      - name: Create EKS Cluster
+        run: |
+          eksctl create cluster \
+            --name netflix-clone-cluster \
+            --region us-east-1 \
+            --nodegroup-name standard-workers \
+            --node-type t3.medium \
+            --nodes 3 \
+            --nodes-min 2 \
+            --nodes-max 4 \
+            --managed
+
+      - name: Configure kubeconfig
+        run: |
+          aws eks update-kubeconfig --region us-east-1 --name netflix-clone-cluster
+          kubectl get nodes
+
+  deploy-app:
+    runs-on: ubuntu-latest
+    needs: create-cluster
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+          kubectl version --client
+
+
+      - name: Apply Kubernetes Deployment
+        run: |
+          kubectl apply -f Kubernetes/deployment.yml
+          kubectl apply -f Kubernetes/node-service.yml
+          kubectl apply -f Kubernetes/service.yml
+          kubectl rollout status deployment/netflix-clone
