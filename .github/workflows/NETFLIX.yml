@@ -251,6 +251,11 @@ jobs:
           aws eks update-kubeconfig --region us-east-1 --name netflix-clone-cluster
           kubectl config view
           kubectl cluster-info
+
+      - name: Create Namespace
+        run: |
+          kubectl create namespace prometheus-node-exporter || echo "Namespace already exists"
+
   
       - name: Deploy Application to EKS
         run: |
