@@ -88,7 +88,10 @@ jobs:
           sudo apt-get install openjdk-11-jdk -y
           curl -sSL https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.6.2.2472-linux.zip -o sonar-scanner.zip
           unzip sonar-scanner.zip -d /opt
-          export PATH="/opt/sonar-scanner-4.6.2.2472-linux/bin:$PATH"
+          echo 'export PATH=/opt/sonar-scanner-4.6.2.2472-linux/bin:$PATH' >> $GITHUB_ENV
+
+      - name: Verify SonarQube Scanner Installation
+        run: sonar-scanner --version
 
       - name: Run SonarQube Analysis
         env:
