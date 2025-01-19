@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: netflix-clone
-        image: tomiphred22/netflix-clone:latest
+        image: nasi101/netflix:latest
         ports:
         - containerPort: 80
