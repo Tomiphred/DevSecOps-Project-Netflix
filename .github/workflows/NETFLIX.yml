@@ -20,7 +20,7 @@ jobs:
 
       - name: Build the Docker image
         run: |
-          docker build . --file Dockerfile --tag netflix-clone:latest
+          docker build --build-arg TMDB_V3_API_KEY=${{ secrets.TMDB_V3_API_KEY }} -t netflix-clone:latest . 
 
       - name: List Docker Images
         run: docker images
