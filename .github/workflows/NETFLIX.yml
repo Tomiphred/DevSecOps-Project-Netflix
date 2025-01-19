@@ -25,11 +25,30 @@ jobs:
       - name: List Docker Images
         run: docker images
 
+      - name: Save Docker Image as Artifact
+        run: docker save netflix-clone:latest -o netflix-clone.tar
+        
+      - name: Upload Docker Image Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image
+          path: netflix-clone.tar
+
 
   trivy_scan:
     runs-on: ubuntu-latest
     needs: build
     steps:
+
+
+      - name: Download Docker Image Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-image
+
+      - name: Load Docker Image
+        run: docker load -i netflix-clone.tar
+        
       - name: Install Trivy
         run: |
           sudo apt-get update
