@@ -231,39 +231,32 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-
+  
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-
+  
       - name: Install kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
           kubectl version --client
-
+  
+      - name: Configure kubeconfig
+        run: |
+          aws eks update-kubeconfig --region us-east-1 --name netflix-clone-cluster
+          kubectl config view
+          kubectl cluster-info
+  
       - name: Deploy Application to EKS
         run: |
           echo "Applying Kubernetes manifests..."
-          kubectl apply -f Kubernetes/deployment.yml
-          kubectl apply -f Kubernetes/node-service.yml
-          kubectl apply -f Kubernetes/service.yml
-          echo "Waiting for deployment to complete..."
+          kubectl apply -f Kubernetes/deployment.yml --validate=false
+          kubectl apply -f Kubernetes/node-service.yml --validate=false
+          kubectl apply -f Kubernetes/service.yml --validate=false
           kubectl rollout status deployment/netflix-clone
-
-      - name: Wait for LoadBalancer External IP
-        run: |
-          echo "Waiting for LoadBalancer external IP..."
-          for i in {1..20}; do
-            EXTERNAL_IP=$(kubectl get svc netflix-clone-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
-            if [ -n "$EXTERNAL_IP" ]; then
-              echo "Service is available at: http://$EXTERNAL_IP"
-              break
-            fi
-            echo "Waiting for external IP..."
-            sleep 15
-          done
+  
