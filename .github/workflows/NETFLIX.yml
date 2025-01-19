@@ -255,7 +255,21 @@ jobs:
       - name: Deploy Application to EKS
         run: |
           echo "Applying Kubernetes manifests..."
-          kubectl apply -f Kubernetes/deployment.yml --validate=false
-          kubectl apply -f Kubernetes/service.yml --validate=false
+          kubectl apply -f Kubernetes/deployment.yml 
+          kubectl apply -f Kubernetes/service.yml 
           kubectl rollout status deployment/netflix-clone
+
+      - name: Retrieve LoadBalancer Public URL
+        run: |
+          echo "Fetching LoadBalancer public URL..."
+          for i in {1..20}; do
+            EXTERNAL_URL=$(kubectl get svc netflix-clone-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null)
+            if [ -n "$EXTERNAL_URL" ]; then
+              echo "Your application is accessible at: http://$EXTERNAL_URL"
+              break
+            fi
+            echo "Waiting for LoadBalancer to provision external URL..."
+            sleep 15
+          done
+
   
