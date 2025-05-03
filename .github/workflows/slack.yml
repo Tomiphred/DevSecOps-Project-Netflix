@@ -14,4 +14,4 @@ jobs:
               "text": "Git push done in the repo , demogithubactionyttest"
             }
         env:
-          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
+          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
