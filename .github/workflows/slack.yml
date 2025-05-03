@@ -10,11 +10,11 @@ jobs:
         run: |
           curl -X POST --data-urlencode \
           "payload={
-            \"channel\": \"#all-dextercyberlabs-testing-uat\",
-            \"username\": \"GitHubBot\",
+            \"channel\": \"#igov-ci-notification\",
+            \"username\": \"igov\",
             \"text\": \"🚀 Code pushed to *${{ github.repository }}* on branch *${{ github.ref_name }}* by *${{ github.actor }}*. Commit message: _${{ github.event.head_commit.message }}_\",
             \"icon_emoji\": \":robot_face:\"
           }" \
           $SLACK_WEBHOOK_URL
         env:
-          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
+          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
