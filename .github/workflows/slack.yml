@@ -12,6 +12,6 @@ jobs:
       - name: Send Slack notification
         uses: Ilshidur/action-slack@master
         env:
-          SLACK_WEBHOOK: https://hooks.slack.com/services/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
+          SLACK_WEBHOOK: https://hooks.slack.com/services/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
         with:
           args: "🚀 Code pushed to *${{ github.repository }}* on *${{ github.ref_name }}* by *${{ github.actor }}*. Commit message: _${{ github.event.head_commit.message }}_"
