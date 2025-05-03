@@ -12,4 +12,4 @@ jobs:
             \"text\": \"🚀 New push to *${{ github.repository }}*\nBranch: *${{ github.ref_name }}*\nMessage: *${{ github.event.head_commit.message }}*\nAuthor: *${{ github.event.head_commit.author.name }}*\"
           }" $SLACK_WEBHOOK_URL
         env:
-          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
+          SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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"
