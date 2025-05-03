@@ -6,14 +6,14 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Slack notification via curl
+      - name: Send Slack notification
         run: |
           curl -X POST --data-urlencode \
           "payload={
-            \"channel\": \"#igov-ci-notification\",
-            \"username\": \"igov\",
-            \"text\": \"🚀 Code pushed to *${{ github.repository }}* on branch *${{ github.ref_name }}* by *${{ github.actor }}*. Commit message: _${{ github.event.head_commit.message }}_\",
-            \"icon_emoji\": \":robot_face:\"
+            \"channel\": \"#all-dextercyberlabs-testing-uat\",
+            \"username\": \"GitHubBot\",
+            \"text\": \"🚀 New push to *${{ github.repository }}* on branch *${{ github.ref_name }}* by *${{ github.actor }}*.\nMessage: _${{ github.event.head_commit.message }}_\",
+            \"icon_emoji\": \":rocket:\"
           }" \
           $SLACK_WEBHOOK_URL
         env:
