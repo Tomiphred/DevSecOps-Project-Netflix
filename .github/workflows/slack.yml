@@ -10,8 +10,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Send Slack notification
-        uses: Ilshidur/action-slack@v2
+        uses: Ilshidur/action-slack@master
         env:
-          SLACK_WEBHOOK: "https://hooks.slack.com/services/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"
+          SLACK_WEBHOOK: https://hooks.slack.com/services/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
         with:
-          args: "🚀 Code was pushed to *${{ github.repository }}* on branch *${{ github.ref_name }}* by *${{ github.actor }}*. Commit message: _${{ github.event.head_commit.message }}_"
+          args: "🚀 Code pushed to *${{ github.repository }}* on *${{ github.ref_name }}* by *${{ github.actor }}*. Commit message: _${{ github.event.head_commit.message }}_"
