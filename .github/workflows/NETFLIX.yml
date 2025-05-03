@@ -3,7 +3,7 @@ name: DevSecOps Netflix Clone
 on:
   push:
     branches:
-      - main
+      - feature
 
 jobs:
   build:
