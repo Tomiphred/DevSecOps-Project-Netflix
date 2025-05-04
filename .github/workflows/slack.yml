@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-      SLACK_CHANNEL: '#ci-alerts' # Slack channel name
+      SLACK_CHANNEL: '#all-dextercyberlabs-testing-uat' # Slack channel name
   
     steps:
       - name: Determine pipeline status
