@@ -163,47 +163,69 @@ jobs:
         run: docker push ${{ secrets.DOCKER_USERNAME }}/netflix-clone:latest
 
   Slack-Notification:
-    name: CI Slack Notifications
-    needs: [build, trivy_scan, OWASP-Dependency-Check, push_to_dockerhub]
-    if: always()
-    runs-on: ubuntu-latest
-    env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-      SLACK_CHANNEL: '#all-dextercyberlabs-testing-uat' # Slack channel name
+      name: CI Slack Notifications
+      needs: [build, trivy_scan, OWASP-Dependency-Check, push_to_dockerhub]
+      if: always()
+      runs-on: ubuntu-latest
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_CHANNEL: '#all-dextercyberlabs-testing-uat'
   
-    steps:
-      - name: Determine pipeline status
-        id: status_check
-        run: |
-          if [ "${{ needs.build.result }}" == "failure" ] || \
-             [ "${{ needs.trivy_scan.result }}" == "failure" ] || \
-             [ "${{ needs.OWASP-Dependency-Check.result }}" == "failure" ] || \
-             [ "${{ needs.push_to_dockerhub.result }}" == "failure" ]; then
-            echo "STATUS=failure" >> $GITHUB_ENV
-          else
-            echo "STATUS=success" >> $GITHUB_ENV
-          fi
+      steps:
+        - name: Determine pipeline status and job results
+          id: status_check
+          run: |
+            echo "Gathering job statuses..."
   
-      - name: Notify Slack via curl
-        run: |
-          if [ "$STATUS" == "success" ]; then
-            EMOJI=":white_check_mark:"
-            TEXT="✅ CI pipeline succeeded!"
-          else
-            EMOJI=":x:"
-            TEXT="❌ CI pipeline failed!"
-          fi
+            JOB_SUMMARY=""
+            STATUS=success
   
-          curl -X POST --data-urlencode \
-          "payload={
-            \"channel\": \"${{ env.SLACK_CHANNEL }}\",
-            \"username\": \"GitHub CI Bot\",
-            \"text\": \"$EMOJI $TEXT\n*Repository:* ${{ github.repository }}\n*Branch:* \`${{ github.ref_name }}\`\n*Run:* <${{ github.run_url }}|#${{ github.run_number }}>\",
-            \"icon_emoji\": \"$EMOJI\"
-          }" \
-          $SLACK_WEBHOOK_URL
-        env:
-          STATUS: ${{ env.STATUS }}
+            declare -A JOBS
+            JOBS=(
+              [Build]=${{ needs.build.result }}
+              [Trivy_Scan]=${{ needs.trivy_scan.result }}
+              [OWASP_Dependency_Check]=${{ needs.OWASP-Dependency-Check.result }}
+              [Push_to_DockerHub]=${{ needs.push_to_dockerhub.result }}
+            )
+  
+            for job in "${!JOBS[@]}"; do
+              result=${JOBS[$job]}
+              if [ "$result" == "success" ]; then
+                JOB_SUMMARY+="✅ *$job*: Success\n"
+              elif [ "$result" == "failure" ]; then
+                JOB_SUMMARY+="❌ *$job*: Failed\n"
+                STATUS=failure
+              else
+                JOB_SUMMARY+="⚠️ *$job*: Skipped or Unknown\n"
+              fi
+            done
+  
+            echo "STATUS=$STATUS" >> $GITHUB_ENV
+            echo "JOB_SUMMARY<<EOF" >> $GITHUB_ENV
+            echo -e "$JOB_SUMMARY" >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+  
+        - name: Send Slack Notification
+          run: |
+            if [ "$STATUS" == "success" ]; then
+              EMOJI=":white_check_mark:"
+              TEXT="✅ CI pipeline completed successfully!"
+            else
+              EMOJI=":x:"
+              TEXT="❌ CI pipeline failed!"
+            fi
+  
+            curl -X POST --data-urlencode \
+            "payload={
+              \"channel\": \"${{ env.SLACK_CHANNEL }}\",
+              \"username\": \"GitHub CI Bot\",
+              \"text\": \"$EMOJI $TEXT\n*Repository:* ${{ github.repository }}\n*Branch:* \`${{ github.ref_name }}\`\n*Run:* <${{ github.run_url }}|#${{ github.run_number }}>\n\n*Job Results:*\n${{ env.JOB_SUMMARY }}\",
+              \"icon_emoji\": \"$EMOJI\"
+            }" \
+            $SLACK_WEBHOOK_URL
+          env:
+            STATUS: ${{ env.STATUS }}
+
 
 
   # create-cluster:
