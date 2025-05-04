@@ -3,18 +3,46 @@ name: slack_github_action
 on: [push]
 
 jobs:
-  notify:
+  Slack-Notification:
+    name: CI Slack Notifications
+    # needs: [unit-tests, sast, sca, Dependency-Check]
+   # if: always()
     runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      SLACK_CHANNEL: '#ci-alerts' # Slack channel name
+  
     steps:
-      - name: Send Slack notification
+      - name: Determine pipeline status
+        id: status_check
         run: |
+          if [ "${{ needs.unit-tests.result }}" == "failure" ] || \
+             [ "${{ needs.sast.result }}" == "failure" ] || \
+             [ "${{ needs.sca.result }}" == "failure" ] || \
+             [ "${{ needs.Dependency-Check.result }}" == "failure" ]; then
+            echo "STATUS=failure" >> $GITHUB_ENV
+          else
+            echo "STATUS=success" >> $GITHUB_ENV
+          fi
+  
+      - name: Notify Slack via curl
+        run: |
+          if [ "$STATUS" == "success" ]; then
+            EMOJI=":white_check_mark:"
+            TEXT="✅ CI pipeline succeeded!"
+          else
+            EMOJI=":x:"
+            TEXT="❌ CI pipeline failed!"
+          fi
+  
           curl -X POST --data-urlencode \
           "payload={
-            \"channel\": \"#all-dextercyberlabs-testing-uat\",
-            \"username\": \"GitHubBot\",
-            \"text\": \"🚀 New push to *${{ github.repository }}* on branch *${{ github.ref_name }}* by *${{ github.actor }}*.\nMessage: _${{ github.event.head_commit.message }}_\",
-            \"icon_emoji\": \":rocket:\"
+            \"channel\": \"${{ env.SLACK_CHANNEL }}\",
+            \"username\": \"GitHub CI Bot\",
+            \"text\": \"$EMOJI $TEXT\n*Repository:* ${{ github.repository }}\n*Branch:* \`${{ github.ref_name }}\`\n*Run:* <${{ github.run_url }}|#${{ github.run_number }}>\",
+            \"icon_emoji\": \"$EMOJI\"
           }" \
           $SLACK_WEBHOOK_URL
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+          STATUS: ${{ env.STATUS }}
+
